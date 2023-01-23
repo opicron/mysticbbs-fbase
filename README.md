@@ -1,2 +1,2 @@
-# mysticbbs-fbase
+# mysticbbs-vbase
 Advanced filebrowser for Mystic BBS
