@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*- 
 
 # changes opicron/thunderhawk
+#   - optimized updatebar position draw to accomodate redraw timer 
 #   - optimized filename position draw
 #   - add timer to redraw filearea description/fileinfo
 #   - fix error when displaying unintended sauce eof char
@@ -57,7 +58,6 @@
 #   - change upload area to predefined group/areaid for non sysops upon upload
 
 # todo:
-#   * add oldpos/newpos logic to updatebar to accomodate redraw timer 
 #   * add backspace to delete queue number
 #   * add ansi interpreter for descriptions? does the error come from 
 #   * queue add filename implementation (if we want) nahh..
@@ -1964,6 +1964,9 @@ def filelistmenu(fbase):
     global cfg
     global download_queue
     global sort_method
+    global bar_oldpos
+
+    bar_oldpos = -1
 
     #[opi] old code?
     #global exit_keys
@@ -2057,21 +2060,33 @@ def filelistmenu(fbase):
         ##if 'ansi' in items[selbar] and items[selbar]['ansi'] == False:
 
     def updatebar(start_pos, index, total, height, vertical=True): 
+      
+      global bar_oldpos
 
-      # add old new pos logic
+      y = 0
+      if total > 0: 
+        if index == 0:
+          y = 0
+        else: 
+          y = (index * (height)) // (total - 1)
+          if y > height - 1:
+            y = height - 1
 
-      if vertical == True:
-
-        for i in range(0,height):
+      if bar_oldpos == -1:
+        for i in range(1,height):
             pos = mci_adjust_y(start_pos,i)
             write(pos+fg_bar_low)
         
-        y = 0
-        if total > 0: 
-            y = (index * (height )) // total        
+      if bar_oldpos <> y:
+        if bar_oldpos != -1:
+          pos = mci_adjust_y(start_pos,bar_oldpos)
+          write(pos+fg_bar_low)
 
         pos = mci_adjust_y(start_pos,y)        
         write(pos+fg_bar_high)
+
+        bar_oldpos = y
+
 
 
     """              
@@ -2399,14 +2414,12 @@ def filelistmenu(fbase):
             writeln(ascend)
             flush()
 
-          #redraw = False
-
-          updatebar(fb_barpos, selbar, len(items), fb_max_lines)        
+          #redraw = False          
 
           #[opi]keep cursor in updatebar
           #gotoxy(1,25)
 
-            
+        updatebar(fb_barpos, selbar, len(items), fb_max_lines)           
 
         oldbar = selbar
         oldtop = top
