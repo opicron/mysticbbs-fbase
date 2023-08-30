@@ -1958,6 +1958,21 @@ def treelist(items,grouponly=False):
 
 
 #------------------------------------------------------------------------------
+def fix_pwrite_bug( s ):
+
+    p = re.compile('\|(.?)\|')
+    
+    match = p.search(s)
+    while match is not None:
+      s = s.replace('|'+match.group(1)+'|','| '+match.group(1)+'|') 
+      #s = s.replace('|'+match.group(0)+'|','| '+match.group(0)+'|') 
+      match = p.search(s)
+
+      #[0m
+    return s
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 #def filelistmenu(name,bid,items,x1,y1,x2,y2,hc=15,nc=7,sb=scrollbar):
 def filelistmenu(fbase):
 
@@ -2046,7 +2061,7 @@ def filelistmenu(fbase):
             gotoxy(28,4+j+top)
             write('|09'+s)
             if items[selbar]['desc'][dizi+j].find(chr(26)) < 0: #bugfix avoid error when sauce EOF data is present
-              pwrite(items[selbar]['desc'][dizi+j])
+              pwrite(fix_pwrite_bug(items[selbar]['desc'][dizi+j]))
             write('|16')
 
             write(dizclearstr)
@@ -2059,7 +2074,7 @@ def filelistmenu(fbase):
 
         ##if 'ansi' in items[selbar] and items[selbar]['ansi'] == False:
 
-    def updatebar(start_pos, index, total, height, vertical=True): 
+    def updatebar(start_pos, index, total, height, redraw=False): 
       
       global bar_oldpos
 
@@ -2072,12 +2087,12 @@ def filelistmenu(fbase):
           if y > height - 1:
             y = height - 1
 
-      if bar_oldpos == -1:
+      if redraw:
         for i in range(1,height):
             pos = mci_adjust_y(start_pos,i)
             write(pos+fg_bar_low)
         
-      if bar_oldpos <> y:
+      if bar_oldpos <> y or redraw:
         if bar_oldpos != -1:
           pos = mci_adjust_y(start_pos,bar_oldpos)
           write(pos+fg_bar_low)
@@ -2158,7 +2173,9 @@ def filelistmenu(fbase):
 
         if oldbar <> selbar or redraw == True or redrawfnstr == True: #or nextfile == True:
 
+          updatebar(fb_barpos, selbar, len(items), fb_max_lines, redraw)
           redraw = False
+            
           if "newonly" in action and "fileonly" in action:
 
             menucmd('FG',str(items[selbar]['groupid']))
@@ -2414,12 +2431,6 @@ def filelistmenu(fbase):
             writeln(ascend)
             flush()
 
-          #redraw = False          
-
-          #[opi]keep cursor in updatebar
-          #gotoxy(1,25)
-
-        updatebar(fb_barpos, selbar, len(items), fb_max_lines)           
 
         oldbar = selbar
         oldtop = top
@@ -2950,13 +2961,13 @@ if "file" in action or "group" in action:
   read_download_queue()
   #clrscr()
     
-  if not os.path.isdir(vbasedir+'tmp'):
-    try:
-      os.mkdir(vbasedir+'tmp')
-    except:
-      writeln('Could not create TEMP dir. Exiting')
-      pause()
-      quit()
+  #if not os.path.isdir(vbasedir+'tmp'):
+  #  try:
+  #    os.mkdir(vbasedir+'tmp')
+  #  except:
+  #    writeln('Could not create TEMP dir. Exiting')
+  #    pause()
+  #    quit()
     
   if "file" in action:
     fbase = getfbaseid(user["fbase"])
