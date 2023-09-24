@@ -1,5 +1,7 @@
 # -*- coding: UTF-8 -*- 
 
+# temp replace prompts!
+
 # changes opicron/thunderhawk
 #   - optimized updatebar position draw to accomodate redraw timer 
 #   - optimized filename position draw
@@ -58,6 +60,12 @@
 #   - change upload area to predefined group/areaid for non sysops upon upload
 
 # todo:
+# - change prompt download queue/batch, always yes with no output
+# - change prompt upload, add ansi
+# - file name to view prompt
+# - unable to view archive prompt
+# - download queue? prompt autoyes
+
 #   * add backspace to delete queue number
 #   * add ansi interpreter for descriptions? does the error come from 
 #   * queue add filename implementation (if we want) nahh..
@@ -154,8 +162,10 @@ fb_displaystr =   "|[X04|[Y03|13|$D19:|[X04|[Y03|15|$T17|&7 " #gotoxy, justify w
 fb_filepos    =   "|[X03|[Y05"
 fb_max_lines  = 17
 
-fb_file       =   "|16|14|&9|14|&8|07|&1|$X22 |16"
-fb_file_high  =   "|16|14|19|&9|14|&8|15|&1|$X22 |16"
+fb_file       =   "|16|14|&9|14|&8|07|&1|$X22  |16"
+fb_file_high  =   "|16|14|19|&9|14|&8|15|&1|$X22  |16"
+fb_file_len   = 20
+
 
 fb_uploader =     "|[X37|[Y01|08|16|$D16"+chr(250)+"|[X37|[Y01|15" 
 fb_sizestr =      "|[X62|[Y01|08|16|$D08"+chr(250)+"|[X62|[Y01|15" 
@@ -599,7 +609,7 @@ def write_download_queue():
 def editqueue():
 
   while True:
-    getprompt(56)
+    #getprompt(56)
     menucmd('QL','')
 
     write(bq_options)
@@ -654,6 +664,10 @@ def editqueue():
         menucmd('FD','')
         #read_download_queue()
         #log('Downloaded some files')      
+        
+      #empty buffer on escape/fail etc
+      while keypressed():
+        key = getkey()
 
     elif ch == 'Q' or ch == KEY_ENTER or ch == KEY_ESCAPE:
       clrscr()
@@ -1286,12 +1300,13 @@ def get_virtualbases():
 
 
 #------------------------------------------------------------------------------
-def loadmainlist():
+def loadmainlist(addgroup=True):
   global action
 
   get_filegroups()
   get_filebases()
-  get_virtualbases()
+  if addgroup:
+    get_virtualbases()
 
   #TODO:
   #when in realfilebase virtual filebase new files dont show
@@ -1310,7 +1325,7 @@ def loadmainlist():
         if ("newonly" in action and filebases[j]['newfiles'] > 0) or "newonly" not in action:
      
           #only add group if necessary (newfile, allfiles)
-          if not groupadded:
+          if not groupadded and addgroup:
             res.append({'name':filegroups[i]['name'],'type':'group','acs':filegroups[i]['acs']})   #,'target':filegroups[i]['id']
             groupadded = True
 
@@ -1813,9 +1828,16 @@ def treelist(items,grouponly=False):
               if len(download_queue)>0:                  
                 stuffkey('Y')               
                 menucmd('FD','')
+
+                #empty buffer on escape/fail etc
+                while keypressed():
+                  key = getkey()
+
                 #read_download_queue()
                 #log('Downloaded some files')
                 redraw = True
+
+
               #else:
                 #show messagebox no files queued
           elif key == 'Q':
@@ -1936,12 +1958,18 @@ def treelist(items,grouponly=False):
           elif key.upper() == 'U':
               if user['level']<sysop_level:
                   upload()
+                  menucmd('FG',str(fa_group))
+                  menucmd('FA',str(items[selbar]['id']))
+
                   #log('Uploaded a file')
               else:
                   menucmd('FU','')
-              #drawfilelist(name)
-              time.sleep(0.1)
+
+              #empty buffer on escape/fail etc
+              while keypressed():
+                key = getkey()
               
+              time.sleep(0.1)          
               redraw = True
         
             
@@ -2134,6 +2162,7 @@ def filelistmenu(fbase):
     done = False
 
     top = 0
+    dizi = 0
     selbar = 0
      
     #make sure to do this we call ONLY filellist
@@ -2146,19 +2175,22 @@ def filelistmenu(fbase):
     redraw      = True
     redrawfnstr = False
     redrawtimeout = True
-    timer = True
+    movement = False
 
+    #timer = True
+
+    waittime    = 300
     oldbar      = 0
     oldtop      = -1
     fnstrpos    = 0
+    fndirection = True
+
     nextfile    = False    #used for auto next file after tagging
-    start       = datetime.datetime.now() - datetime.timedelta(seconds = 30)
+    start       = datetime.datetime.now() # - datetime.timedelta(seconds = 30)
     end         = datetime.datetime.now()
 
-    x_filelen       = mci_extract_x(fb_barpos) - mci_extract_x(fb_filepos) - 2
+    #x_filelen       = mci_extract_x(fb_barpos) - mci_extract_x(fb_filepos) - 2
     y_start         = mci_extract_y(fb_filepos)
-
-    #drawfilelist()   
 
     while done == False and not shutdown():
         
@@ -2171,11 +2203,10 @@ def filelistmenu(fbase):
           write(fb_displaystr)
           redrawtimeout = True
 
-        if oldbar <> selbar or redraw == True or redrawfnstr == True: #or nextfile == True:
+        if oldbar <> selbar or redraw == True: 
 
           updatebar(fb_barpos, selbar, len(items), fb_max_lines, redraw)
-          redraw = False
-            
+           
           if "newonly" in action and "fileonly" in action:
 
             menucmd('FG',str(items[selbar]['groupid']))
@@ -2205,7 +2236,7 @@ def filelistmenu(fbase):
             setpinfo(9, filler)
 
             pos = mci_adjust_y(fb_filepos,oldbar-top)
-            setpinfo(1, items[oldbar]['name'][fnstrpos:x_filelen+fnstrpos])
+            setpinfo(1, items[oldbar]['name'][fnstrpos:fb_file_len-len(filler)-len(newfile)])
             write(pos)
             write(fb_file)
 
@@ -2223,16 +2254,15 @@ def filelistmenu(fbase):
             setpinfo(9, filler)
 
             pos = mci_adjust_y(fb_filepos,selbar-top)
-            setpinfo(1, items[selbar]['name'][fnstrpos:x_filelen+fnstrpos])
+            setpinfo(1, items[selbar]['name'][fnstrpos:fb_file_len-len(filler)-len(newfile)])
             write(pos)
             write(fb_file_high)
 
-          dizi = 0
-          y    = top
+          if redraw or oldtop <> top:
+            y = top
+            while y-top < fb_max_lines:
 
-          while y-top<=fb_max_lines - 1:
-
-            #if oldtop <> top or oldtop == -1:
+              #if oldtop <> top or oldtop == -1:
 
               if y<len(items):
                   filler = " "
@@ -2246,18 +2276,7 @@ def filelistmenu(fbase):
                   setpinfo(8, newfile)
                   setpinfo(9, filler)
 
-                  
-                  if redrawfnstr == True:
-                    if items[y]['newfile'] == True:                    
-                      fnstr = items[y]['name'][fnstrpos:x_filelen+fnstrpos-1]
-                    else:
-                      fnstr = items[y]['name'][fnstrpos:x_filelen+fnstrpos]
-                  else:
-                    if items[y]['newfile'] == True:                    
-                      fnstr = items[y]['name'][:x_filelen - 1]
-                    else:
-                      fnstr = items[y]['name'][:x_filelen]
-
+                  fnstr = items[y]['name'][:fb_file_len-len(filler)-len(newfile)]
                   setpinfo(1, fnstr)
 
                   if selbar == y:
@@ -2265,25 +2284,81 @@ def filelistmenu(fbase):
                   else:
                     s = fb_file
                   
-                  if (redrawfnstr == True and selbar==y) or redrawfnstr == False:
-                    pos = mci_adjust_y(fb_filepos,y-top)      
-                    write(pos)
-                    write(s)
+                  #if (redrawfnstr == True and selbar==y) or redrawfnstr == False:
+                  pos = mci_adjust_y(fb_filepos,y-top)      
+                  write(pos)
+                  write(s)
               y += 1
 
+            redraw = False
+        #always check time
+        end = datetime.datetime.now()
+        delta = end - start      
 
-        if timer:
+        if movement:
+          waittime = 300
 
-          end = datetime.datetime.now()
-          # get difference
-          delta = end - start      
-          if delta.total_seconds() * 1000 > 300:
-            redrawtimeout = True
+        else:
+
+          if fnstrpos == 0 or fnstrpos == len(items[selbar]['name'])-fb_file_len+1:
+            waittime = 750
+          else:
+            waittime = 100
           
+        if delta.total_seconds() * 1000 > waittime:
+          if movement:
+            redrawtimeout = True
+            movement = False
+          else:
+            redrawfnstr = True
+        
+        if redrawfnstr: #or nextfile == True:
+
+          redrawfnstr = False
+
+          if fndirection:
+            fnstrpos += 1
+          else:
+            fnstrpos -= 1
+          
+          if fnstrpos > len(items[selbar]['name'])-fb_file_len+1:
+            fnstrpos = len(items[selbar]['name'])-fb_file_len+1
+            fndirection = False
+          
+          if fnstrpos < 0:
+            fnstrpos = 0
+            fndirection = True
+
+          start = datetime.datetime.now()            
+
+          filler = " "
+          if items[selbar]['queue'] == True:
+            filler = "*"
+
+          newfile = ""
+          if items[selbar]['newfile'] == True:
+            newfile = ">"
+
+          setpinfo(8, newfile)
+          setpinfo(9, filler)
+
+          pos = mci_adjust_y(fb_filepos,selbar-top)      
+          write(pos)
+
+          fnstr = items[selbar]['name'][fnstrpos:fb_file_len-len(filler)-len(newfile)+fnstrpos]
+          setpinfo(1, fnstr)
+
+          s = fb_file_high
+          write(s)
+
+
         if redrawtimeout:
 
           redrawtimeout = False
-          timer = False
+          movement = False
+          #timer = False
+
+
           #gotoxy(1,1)
           #write(str(delta.total_seconds() * 1000)+'   ')
           #if delta.total_seconds() * 1000 > 2000:
@@ -2320,79 +2395,28 @@ def filelistmenu(fbase):
               #var_dump(ff['desc'])
           tmpbase = getfbaseid(int(items[selbar]['baseid']))
 
-          if (items[selbar]['desc'][0] == 'No Description' or items[selbar]['name'] == items[selbar]['desc'][0]) and items[selbar]['name'][-4:] == '.txt':
-            #var_dump(fileinfo)
-            #write('|PN')
-            #ff['desc'][0] = fbase['path']+fileinfo["filename"]
-            #items[selbar]['desc'][0] = fbase['path']+items[selbar]["name"]
-            if items[selbar].get("realpath") is not None and exists(items[selbar]['realpath']+items[selbar]["name"]):
-              #gotoxy(1,1)
-              #write('test')
-              f = open(items[selbar]['realpath']+items[selbar]["name"], 'r+')
-            elif exists(tmpbase['path']+items[selbar]["name"]):
-              f = open(tmpbase['path']+items[selbar]["name"], 'r+')
-            else:
-              continue
+          #avoid error on no description
+          if items[selbar]['desc']:
 
-            content = f.read()
-            #write(content)
-            f.close()
-            #try:
-            #match = re.search('BEGIN\_FILE\_ID\.DIZ(.*?)END\_FILE\_ID\.DIZ', content)
-            match = re.search('BEGIN\_FILE\_ID\.DIZ(.*?)(@|x)END\_FILE\_ID\.DIZ', content, re.MULTILINE | re.DOTALL) 
-            if match:
-              #for match in matches:
-              items[selbar]['desc'] = match.group(1).splitlines()
+            if ( items[selbar]['desc'][0] == 'No Description' or items[selbar]['name'] == items[selbar]['desc'][0]) and items[selbar]['name'][-4:] == '.txt':
+              #var_dump(fileinfo)
+              #write('|PN')
+              #ff['desc'][0] = fbase['path']+fileinfo["filename"]
+              #items[selbar]['desc'][0] = fbase['path']+items[selbar]["name"]
+              if items[selbar].get("realpath") is not None and exists(items[selbar]['realpath']+items[selbar]["name"]):
+                #gotoxy(1,1)
+                #write('test')
+                f = open(items[selbar]['realpath']+items[selbar]["name"], 'r+')
+              elif exists(tmpbase['path']+items[selbar]["name"]):
+                f = open(tmpbase['path']+items[selbar]["name"], 'r+')
+              else:
+                continue
 
-              for i, item in enumerate(items[selbar]['desc']):
-                items[selbar]['desc'][i] = items[selbar]['desc'][i][:dizmaxwidth]
-
-              for item in items[selbar]['desc']:
-                if len(item) > items[selbar]['desclen']:
-                  items[selbar]['desclen'] = len(item)
-            #var_dump(result)
-            #write('|PN')
-            #except ValueError:
-            #items[selbar]['desc'][0] = fbase['path']+items[selbar]["name"]
-
-          elif items[selbar]['desc'][0] == 'No Description' and items[selbar]['name'][-4:] == '.flf':
-            if exists(tmpbase['path']+items[selbar]["name"]):
-              try: 
-                #get width of character
-                #str(figlet_format('test', font=txt)) 
-                #f = Figlet(font=fbase['path']+items[selbar]['name'][0:-4],width=dizmaxwidth-10,justify="center") 
-                f = Figlet(font=tmpbase['path']+items[selbar]['name'][0:-4],width=dizmaxwidth,justify="left") 
-                #text = f.renderText(items[selbar]['name'][0:-4]).encode('ascii') #must encode to ascii to avoid unicode errors
-                text = f.renderText(items[selbar]['name'][0:-4]) #must encode to ascii to avoid unicode errors
-        
-                items[selbar]['desc'] = text.splitlines()
-                for item in items[selbar]['desc']:
-                  if len(item) > items[selbar]['desclen']:
-                    items[selbar]['desclen'] = len(item)
-
-              except Exception:
-                items[selbar]['desc'][0] = 'Could not load font'
-                items[selbar]['desclen'] = len(items[selbar]['desc'][0])
-              
-              if len(items[selbar]['desc']) == 0:
-                items[selbar]['desc'] = []
-                items[selbar]['desc'].append('Could not load font')
-                items[selbar]['desclen'] = len(items[selbar]['desc'][0])
-
-          #find DIZ description if still not found
-
-          if items[selbar]['name'] == items[selbar]['desc'][0]:
-            #gotoxy(1,1)
-            #write('yes')
-            #write(items[selbar]['realpath']+items[selbar]["name"][:-3]+'diz')
-
-            if "realpath" in items[selbar] and exists(items[selbar]['realpath']+items[selbar]["name"][:-3]+'diz'):
-              
-              f = open(items[selbar]['realpath']+items[selbar]["name"][:-3]+'diz', 'r+')
               content = f.read()
               #write(content)
               f.close()
-
+              #try:
+              #match = re.search('BEGIN\_FILE\_ID\.DIZ(.*?)END\_FILE\_ID\.DIZ', content)
               match = re.search('BEGIN\_FILE\_ID\.DIZ(.*?)(@|x)END\_FILE\_ID\.DIZ', content, re.MULTILINE | re.DOTALL) 
               if match:
                 #for match in matches:
@@ -2404,14 +2428,68 @@ def filelistmenu(fbase):
                 for item in items[selbar]['desc']:
                   if len(item) > items[selbar]['desclen']:
                     items[selbar]['desclen'] = len(item)
-              else:
-                items[selbar]['desc'] = content.splitlines()
-                for item in items[selbar]['desc']:
-                  if len(item) > items[selbar]['desclen']:                      
-                    items[selbar]['desclen'] = len(item)
+              #var_dump(result)
+              #write('|PN')
+              #except ValueError:
+              #items[selbar]['desc'][0] = fbase['path']+items[selbar]["name"]
 
-                for i, item in enumerate(items[selbar]['desc']):
-                  items[selbar]['desc'][i] = items[selbar]['desc'][i][:dizmaxwidth]
+            elif items[selbar]['desc'][0] == 'No Description' and items[selbar]['name'][-4:] == '.flf':
+              if exists(tmpbase['path']+items[selbar]["name"]):
+                try: 
+                  #get width of character
+                  #str(figlet_format('test', font=txt)) 
+                  #f = Figlet(font=fbase['path']+items[selbar]['name'][0:-4],width=dizmaxwidth-10,justify="center") 
+                  f = Figlet(font=tmpbase['path']+items[selbar]['name'][0:-4],width=dizmaxwidth,justify="left") 
+                  #text = f.renderText(items[selbar]['name'][0:-4]).encode('ascii') #must encode to ascii to avoid unicode errors
+                  text = f.renderText(items[selbar]['name'][0:-4]) #must encode to ascii to avoid unicode errors
+          
+                  items[selbar]['desc'] = text.splitlines()
+                  for item in items[selbar]['desc']:
+                    if len(item) > items[selbar]['desclen']:
+                      items[selbar]['desclen'] = len(item)
+
+                except Exception:
+                  items[selbar]['desc'][0] = 'Could not load font'
+                  items[selbar]['desclen'] = len(items[selbar]['desc'][0])
+                
+                if len(items[selbar]['desc']) == 0:
+                  items[selbar]['desc'] = []
+                  items[selbar]['desc'].append('Could not load font')
+                  items[selbar]['desclen'] = len(items[selbar]['desc'][0])
+
+            #find DIZ description if still not found
+
+            if items[selbar]['name'] == items[selbar]['desc'][0]:
+              #gotoxy(1,1)
+              #write('yes')
+              #write(items[selbar]['realpath']+items[selbar]["name"][:-3]+'diz')
+
+              if "realpath" in items[selbar] and exists(items[selbar]['realpath']+items[selbar]["name"][:-3]+'diz'):
+                
+                f = open(items[selbar]['realpath']+items[selbar]["name"][:-3]+'diz', 'r+')
+                content = f.read()
+                #write(content)
+                f.close()
+
+                match = re.search('BEGIN\_FILE\_ID\.DIZ(.*?)(@|x)END\_FILE\_ID\.DIZ', content, re.MULTILINE | re.DOTALL) 
+                if match:
+                  #for match in matches:
+                  items[selbar]['desc'] = match.group(1).splitlines()
+
+                  for i, item in enumerate(items[selbar]['desc']):
+                    items[selbar]['desc'][i] = items[selbar]['desc'][i][:dizmaxwidth]
+
+                  for item in items[selbar]['desc']:
+                    if len(item) > items[selbar]['desclen']:
+                      items[selbar]['desclen'] = len(item)
+                else:
+                  items[selbar]['desc'] = content.splitlines()
+                  for item in items[selbar]['desc']:
+                    if len(item) > items[selbar]['desclen']:                      
+                      items[selbar]['desclen'] = len(item)
+
+                  for i, item in enumerate(items[selbar]['desc']):
+                    items[selbar]['desc'][i] = items[selbar]['desc'][i][:dizmaxwidth]
 
           #check if diz has ansi codes
           if 'ansi' not in items[selbar]:
@@ -2457,7 +2535,8 @@ def filelistmenu(fbase):
           if extended:
 
             start = datetime.datetime.now()            
-            timer = True
+            movement = True
+            #timer = True
 
             if key == KEY_UP:
                 selbar=selbar-1
@@ -2513,6 +2592,7 @@ def filelistmenu(fbase):
 
             if key in MOVEMENT_KEY:
               #[opi] reset filescroller
+              dizi = 0
               fnstrpos = 0
               redrawfnstr = False
               # start time and end time
@@ -2523,19 +2603,29 @@ def filelistmenu(fbase):
             key = key.upper()
 
             # reset filename scroll position (to avoid error in redraw all files)
-            if key != '[' and key != ']':
-              fnstrpos = 0
-              redrawfnstr = False
+            #if key != '[' and key != ']':
+            #  fnstrpos = 0
+            #  redrawfnstr = False
 
-            if key == ']':
-                if len(items[selbar]['name'])+2 > x_filelen:
-                  fnstrpos += 1
-                  redrawfnstr = True
-                  if fnstrpos > len(items[selbar]['name'])-x_filelen:
-                    fnstrpos = len(items[selbar]['name'])-x_filelen
-                    redrawfnstr = False                
+#            if key == ']':
+#                if len(items[selbar]['name'])+2 > x_filelen:
+#                  fnstrpos += 1
+#                  redrawfnstr = True
+#                  if fnstrpos > len(items[selbar]['name'])-x_filelen:
+#                    fnstrpos = len(items[selbar]['name'])-x_filelen
+#                    redrawfnstr = False                
 
-            elif key == KEY_ESCAPE:
+#            elif key == '[':
+#                fnstrpos -= 1
+#                redrawfnstr = True
+#                if fnstrpos < 0:
+#                  fnstrpos = 0
+#                  redrawfnstr = False              
+            #else:
+            #    fnstrpos = 0
+            #    redrawfnstr = False
+
+            if key == KEY_ESCAPE:
                 clrscr()
                 done = True
 
@@ -2589,9 +2679,11 @@ def filelistmenu(fbase):
                   redraw = True
                   #redrawfnstr = False
               else: 
-                  gotoxy(30,4)
+
+                  redrawfnstr = True
+                  gotoxy(27,22)
                   
-                  filename=str(items[selbar]['name'])
+                  filename=items[selbar]['name']
 
                   if items[selbar]['queue'] == True:
 
@@ -2601,7 +2693,7 @@ def filelistmenu(fbase):
                     remove_key_from_download_queue(filename)                
                     #stuffkey(KEY_ESCAPE+KEY_DOWN)
                     nextfile = True
-
+                  
                     write_download_queue()
 
                   else:
@@ -2617,22 +2709,22 @@ def filelistmenu(fbase):
                           items[selbar]['queue'] = True 
                           #stuffkey(KEY_ESCAPE+KEY_DOWN)
                           nextfile = True
-
+                  
                       if not found:
                         #[opi] add to queue                                  
-                        stuffkey(filename+chr(13))
-                        #stuffkey(filename)
+                        stuffkey(items[selbar]['name']+chr(13))
                         #stuffkey(chr(13))
                         #menucmd('QA',str(filename))
                         menucmd('QA','')
                         #write('|PN') 
 
-                        #log('Added file: '+filename)
+                        #write('|14Added file: '+filename)
                         items[selbar]['queue'] = True
                         download_queue[filename] = len(download_queue)+1
                         #write (str(len(download_queue)))
                         #pause(True)
                         nextfile = True
+                  
                         #stuffkey(KEY_ESCAPE+KEY_DOWN)
                         write_download_queue()
                         #redraw = True
@@ -2642,17 +2734,6 @@ def filelistmenu(fbase):
 
                   #time.sleep(0.1)
                   
-
-            elif key == '[':
-                fnstrpos -= 1
-                redrawfnstr = True
-                if fnstrpos < 0:
-                  fnstrpos = 0
-                  redrawfnstr = False              
-            #else:
-            #    fnstrpos = 0
-            #    redrawfnstr = False
-
             elif key == 'Q':
                 #[opi] with new graphics we dont need to avoid this
                 #if len(download_queue)>0:                  
@@ -2668,7 +2749,7 @@ def filelistmenu(fbase):
                   write('|CL|SF03|DFdownloads||TF|CR|07Download|08:|15 '+items[selbar]['name']+'|CR|CR|CR')   
                   #redraw = True
                   
-                  menucmd('F3', items[selbar]['filename'])
+                  menucmd('F3', items[selbar]['filename']) #filename with path
                   time.sleep(0.2)
                   redraw = True
                   
@@ -2688,12 +2769,16 @@ def filelistmenu(fbase):
                       stuffkey(items[selbar]['name']+chr(13)) #+'N' to avoid question abouit disconned
                       for i in range(len(download_queue)):
                         remove_key_from_download_queue(filename)
+
                     elif len(download_queue) > 0:
                       stuffkey('Y') #+'N' to avoid question abouit disconned
                       
                     menucmd('FD','')
+		                #give time to start download
+
                     time.sleep(0.2)
-                    
+                    #empty buffer on escape/fail etc
+                             
                     # if no files are downloaded file.lst is present
                     # if all files are download file.list is gone
 
@@ -2713,6 +2798,10 @@ def filelistmenu(fbase):
 
                   else:
                     write(getprompt(76))
+
+                #empty buffer on escape/fail etc
+                while keypressed():
+                  key = getkey()
 
             #change sorting
 
@@ -2828,8 +2917,12 @@ def filelistmenu(fbase):
                     #if ch == 'J': menucmd('*R','')
                 
             elif key == 'U':
+                write('|CL')                
                 if user['level']<sysop_level:
                     upload()
+                    menucmd('FG',str(items[selbar]['groupid']))
+                    menucmd('FA',str(items[selbar]['baseid']))
+
                     #log('Uploaded a file')
                 else:
                     menucmd('FU','')
@@ -2863,6 +2956,37 @@ sysop_level     = re.findall(r'\d+', cfg['sysopacs'])[0]
 global action
 
 action = []
+
+#------------------------------------------------------------------------------------------------------
+# replace prompts
+#------------------------------------------------------------------------------------------------------
+
+#049 file already in queue
+prompt_49 = getprompt(49)
+setprompt(49, '|IF|00')
+#|15File is already in queue
+
+#050 file added to batch
+prompt_50 = getprompt(50)
+setprompt(50, '|IF|00')
+
+#053 select which file to remove from batch
+prompt_53 = getprompt(53)
+setprompt(53, '|IF|00') #blank next prompt and b/lack text
+#|07Select file |15#|07 to remove |08(|151|08 - |15|&1|08) |08: |XX|IF|[K
+
+#054 batch removed from queue
+prompt_54 = getprompt(54)
+setprompt(54, '|IF|00')
+
+#357 add file to batch
+prompt_357 = getprompt(357)
+setprompt(357, '|IF|00')
+# |01] |09Add which file number to batch |01(|07Enter|01/|07Quit|01)|09: |XX
+
+#download qeue
+#085 download queued files?
+
 
 
 #------------------------------------------------------------------------------------------------------
@@ -2929,11 +3053,14 @@ if "changearea" in action:
 
   args = param_str(2)
   if args == "-" or args == "+":
-    get_filebases(True)
-  
+    filebases = loadmainlist(False)
+    #get_filebases(True)
+ # 
     curfbase = getfbaseid(user["fbase"])    
     for i in range(len(filebases)):
+      #write(str(filebases[i]['id'])+'}')
       if filebases[i]['id'] == curfbase['id']:
+        #write(filebases[i]['name']+'}')
         next = i
         if args == "-":
           next -= 1
@@ -2945,6 +3072,7 @@ if "changearea" in action:
         elif next > len(filebases)-1:
           next = 0
 
+        #write('|'+filebases[next]['name'])
         if filebases[next]['groupid'] != -1:
           menucmd('FG',str(filebases[next]['groupid']))
         menucmd('FA',str(filebases[next]['id'])) 
@@ -2954,6 +3082,9 @@ if "changearea" in action:
 
 
 if "queue" in action:
+  #053 select which file to remove from batch
+  setprompt(53, prompt_53) 
+
   read_download_queue()
   editqueue()
 
@@ -2984,5 +3115,23 @@ if "file" in action or "group" in action:
     treelist(loadmainlist(),grouponly)
 
 #------------------------------------------------------------------------------
+# restore prompts
+#------------------------------------------------------------------------------
+
+#049 file already in queue
+setprompt(49, prompt_49)
+
+#050 file added to batch
+#setprompt(50, str(prompt_50))
+
+#053 select which file to remove from batch
+setprompt(53, prompt_53) 
+
+#054 batch removed from queue
+#setprompt(54, str(prompt_54))
+
+#357 add file to batch
+setprompt(357, prompt_357)
+
 
 ################################################################################################################################
