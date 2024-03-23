@@ -2441,7 +2441,10 @@ def filelistmenu(fbase):
                   #f = Figlet(font=fbase['path']+items[selbar]['name'][0:-4],width=dizmaxwidth-10,justify="center") 
                   f = Figlet(font=tmpbase['path']+items[selbar]['name'][0:-4],width=dizmaxwidth,justify="left") 
                   #text = f.renderText(items[selbar]['name'][0:-4]).encode('ascii') #must encode to ascii to avoid unicode errors
-                  text = f.renderText(items[selbar]['name'][0:-4]) #must encode to ascii to avoid unicode errors
+                  if items[selbar]["name"] == "tmplr":
+                    text = f.renderText('0123456789') #must encode to ascii to avoid unicode errors
+                  else:
+                    text = f.renderText(items[selbar]['name'][0:-4]) #must encode to ascii to avoid unicode errors
           
                   items[selbar]['desc'] = text.splitlines()
                   for item in items[selbar]['desc']:
