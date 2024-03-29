@@ -2373,6 +2373,7 @@ def filelistmenu(fbase):
 
           #[opi] changed date time to date only no more justification
           tmpstr = datestr(dated2u(items[selbar]["date"]), "NNN DD YYYY")
+          
           #writexy(48,2,11,datestr(dated2u(items[selbar]["date"]), "NNN DD YYYY HH:II:SS").ljust(30,' '))
           #writexy(48,2,11,datestr(dated2u(items[selbar]["date"]), "NNN DD YYYY").ljust(11,' '))
           write(fb_datestr+tmpstr)
@@ -2964,6 +2965,10 @@ action = []
 # replace prompts
 #------------------------------------------------------------------------------------------------------
 
+#047 file already in queue
+prompt_47 = getprompt(49)
+setprompt(47, '|IF|00')
+
 #049 file already in queue
 prompt_49 = getprompt(49)
 setprompt(49, '|IF|00')
@@ -3120,6 +3125,9 @@ if "file" in action or "group" in action:
 #------------------------------------------------------------------------------
 # restore prompts
 #------------------------------------------------------------------------------
+
+#047 file already in queue
+setprompt(47, prompt_47)
 
 #049 file already in queue
 setprompt(49, prompt_49)
