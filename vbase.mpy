@@ -94,7 +94,6 @@
 import os, sys, datetime, time, struct, json, re
 import traceback
 
-from pyfiglet import Figlet
 from os.path import exists
 from collections import OrderedDict as OD      #for download queue
 from mystic_bbs import *                       #mystic user/config
@@ -110,9 +109,6 @@ from copy import copy
 from collections import OrderedDict
 from operator import getitem
 from operator import itemgetter
-
-
-#import ast
 
 
 ##########################################################################################################################
@@ -842,6 +838,7 @@ def getfilesbaseid(groupid, baseid,lastscandate=-1):
 
   files = []
   fbase = getfbaseid(baseid)
+  
   if fbase is None:
     msgdialog(' Error ','Filebase not found!')
     return []
@@ -1071,35 +1068,41 @@ def var_dump(var, prefix=''):
 
 #------------------------------------------------------------------------------
 def get_filegroups():
-    global filegroups
+      global filegroups
     #global filebases
 
-    filegroups = []
+      filegroups = []
     #filebases = []
 
     #[opi]read position of groups_f from dat file instead of by id range
 
-    filename = getcfg()['data']+'groups_f.dat'
+    #filename = getcfg()['data']+'groups_f.dat'
 
     #[opi] check file record compatiblity
-    size = os.stat(filename).st_size
-    if size % 206 == 0:
-
-      with open(filename, "rb") as f:
-          while True:
-              data = f.read(206)
-              if data == '':
-                  break
-              id = int(struct.unpack('b', data[:1])[0])
-
-              fg = getfgroupid(id)
-              #fg['virtual'] = False
-              if not fg:
-                continue
-              if access(fg['acs']):
-                  filegroups.append(fg)
+    #size = os.stat(filename).st_size
+    #if size % 206 == 0:
+#
+#      with open(filename, "rb") as f:
+#          while True:
+#              data = f.read(206)
+#              if data == '':
+#                  break
+#              id = int(struct.unpack('b', data[:1])[0])
+#
+#              fg = getfgroupid(id)
+#              #fg['virtual'] = False
+#              if not fg:
+#                continue
+#              if access(fg['acs']):
+#                  filegroups.append(fg)
     
-    else:
+#    else:
+
+      #while fg != None:
+      #fg = getfgroup(i)
+      #if message group exists
+      #if fg != None:
+
       #[opi] falls back to ID reading
       for i in range(0,300):
         fg = getfgroupid(i)
@@ -1114,104 +1117,122 @@ def get_filegroups():
 #------------------------------------------------------------------------------    
 def get_filebases(quick=False):    
     #try:
-          global filebases
-          filebases = []
-        
-          #[opi]read position of filebase from fbases instead of by id range
+            global filebases
+            filebases = []
+            #[opi]read position of filebase from fbases instead of by id range
 
 #          filename = getcfg()['data']+'fbases.dat'
-
-#        #[opi] check file record compatiblity
-#        size = os.stat(filename).st_size
-#        if size % 640 == 0:
+#         #[opi] check file record compatiblity
+#          size = os.stat(filename).st_size
+#          if size % 640 == 0:
 #          
-#          with open(filename, "rb") as f:
-#            while True:
-#              #[opi] each record is 640 bytes
+#            with open(filename, "rb") as f:
+#              while True:
+#                #[opi] each record is 640 bytes
 #
-#              data = f.read(640) #print binascii.hexlify(data) to debug
-#              if data == '':
-#                  break
-#              id = int(struct.unpack('b', data[:1])[0])
+#                data = f.read(640) #print binascii.hexlify(data) to debug
+#                if data == '':
+#                    break
+#                id = int(struct.unpack('b', data[:1])[0])
 #
-#              #+----
-#              #[opi] leaving this in for common knowledge - pass on the wealth                      
-#              #titlesize = int(struct.unpack('b', data[2:3])[0]) #third byte is size of title string
-#              #title = data[3:titlesize+3] #four byte + size of title reads title
-#              #+----
-#            
-#              #[opi] dont read by id, read by fbase
-#              #for i in range(0,300):
+#                #+----
+#                #[opi] leaving this in for common knowledge - pass on the wealth                      
+#                #titlesize = int(struct.unpack('b', data[2:3])[0]) #third byte is size of title string
+#                #title = data[3:titlesize+3] #four byte + size of title reads title
+#                #+----
 #              
-#              fb = getfbaseid(id)
+#                #[opi] dont read by id, read by fbase
+#                #for i in range(0,300):
+#                
+#                fb = getfbaseid(id)
 #
-#              if not fb:
-#                  continue
+#                if not fb:
+#                    continue
 #
-#              #[opi] change group else access doesnt work
-#              fa_group = getgroupfromacs(fb['listacs'])
-#              
-#              if quick == False:
-#                #get last scan date for current user
-#                fb['lsfilename'] = cfg['data']+fb['filename']+'.scn'
-#                fb['lastscan'] = get_last_scan( fb['lsfilename'] )
+#                #[opi] change group else access doesnt work
+#                fa_group = getgroupfromacs(fb['listacs'])
+#                if fa_group != -1:
+#                  menucmd('FG',str(fa_group))
 #
-#                if fb['name'].find('!VG') > -1 or fb['name'].find('!VB') > -1:
-#                  files, bytes, new = count_virtual( fb['path'], fb['lastscan'] )
-#                  fb['total'] = files
-#                  fb['totalkb'] = bytes             
-#                  fb['totaldl'] = 0 
-#                  fb['newfiles'] = new            
-#                else:
-#                  fb['total'],fb['totalkb'],fb['totaldl'],fb['newfiles'] = fbase_stat_id(id,fb['lastscan'])
-#              #fb['virtual'] = False
-#              #fb['total'],fb['totalkb'],fb['totaldl'],fb['newfiles'] = fbase_stat_id(id,1064787200)
-#              
+#                fb['lastscan'] = 0
+#                fb['total'] = 0
+#                fb['totalkb'] = 0
+#                fb['totaldl'] = 0 
+#                fb['newfiles'] = 0
+#                fb['lsfilename'] = cfg['data']+fb['filename']+'.scn'                
+#                
+#                if quick == False:
+#                  #get last scan date for current user
+#                  fb['lsfilename'] = cfg['data']+fb['filename']+'.scn'
+#                  fb['lastscan'] = get_last_scan( fb['lsfilename'] )
 #
-#              if fa_group != -1:
-#                menucmd('FG',str(fa_group))
+#                  if fb['name'].find('!VG') > -1 or fb['name'].find('!VB') > -1:
+#                    files, bytes, new = count_virtual( fb['path'], fb['lastscan'] )
+#                    fb['total'] = files
+#                    fb['totalkb'] = bytes             
+#                    fb['totaldl'] = 0 
+#                    fb['newfiles'] = new            
+#                  else:
+#                    fb['total'],fb['totalkb'],fb['totaldl'],fb['newfiles'] = fbase_stat_id(id,fb['lastscan'])
+#                #fb['virtual'] = False
+#                #fb['total'],fb['totalkb'],fb['totaldl'],fb['newfiles'] = fbase_stat_id(id,1064787200)
+#                
 #                fb['groupid'] = fa_group
-#                if access(fb['listacs']):                                
+#                if access(fb['listacs']):              
 #                  filebases.append(fb)
-#              else:
-#                fb['groupid'] = -1;
-#                filebases.insert(0,fb)         
 #
-#        else:
+#                #if fa_group != -1:
+#                #  menucmd('FG',str(fa_group))
+#                #  fb['groupid'] = fa_group
+#                #  if access(fb['listacs']):                                
+#                #    filebases.append(fb)
+#                #else:
+#                #  fb['groupid'] = -1;
+#                #  filebases.insert(0,fb)         
+#
+#          else:
 
-          #[opi]fall back to ID reading   
-          for i in range(0,300):
-            fb = getfbaseid(i)
-            if not fb:
-                continue
+            #[opi]fall back to ID reading   
+            for i in range(0,300):
+              fb = getfbaseid(i)
+              if not fb:
+                  continue
+              #logerror(str(fb))
+              #[opi] change group else access doesnt work
+              fa_group = getgroupfromacs(fb['listacs'])
+              if fa_group != -1:
+                menucmd('FG',str(fa_group))
 
-            #[opi] change group else access doesnt work
-            fa_group = getgroupfromacs(fb['listacs'])
-            if fa_group != -1:
-              menucmd('FG',str(fa_group))
-
-            #fb['virtual'] = False
-            #get last scan date for current user
-            if quick == False:
+              #fb['virtual'] = False
+              #get last scan date for current user
+              fb['lastscan'] = 0
+              fb['total'] = 0
+              fb['totalkb'] = 0
+              fb['totaldl'] = 0 
+              fb['newfiles'] = 0
               fb['lsfilename'] = cfg['data']+fb['filename']+'.scn'
-              fb['lastscan'] = get_last_scan( fb['lsfilename'] )
 
-              if fb['name'].find('!VG') > -1 or fb['name'].find('!VB') > -1:
-                files, bytes, new = count_virtual( fb['path'], fb['lastscan'] )
-                fb['total'] = files
-                fb['totalkb'] = bytes             
-                fb['totaldl'] = 0 
-                fb['newfiles'] = new            
-              else:
-                fb['total'],fb['totalkb'],fb['totaldl'],fb['newfiles'] = fbase_stat_id(i,fb['lastscan'])
+              #this takes a lot of time, avoid when changing area
+              if quick == False:              
+                fb['lastscan'] = get_last_scan( fb['lsfilename'] )
+
+                if fb['tag'].find('!VG') > -1 or fb['tag'].find('!VB') > -1:
+                #if fb['name'].find('!VG') > -1 or fb['name'].find('!VB') > -1:
+                  files, bytes, new = count_virtual( fb['path'], fb['lastscan'] )
+                  fb['total'] = files
+                  fb['totalkb'] = bytes             
+                  fb['totaldl'] = 0 
+                  fb['newfiles'] = new            
+                else:
+                  fb['total'],fb['totalkb'],fb['totaldl'],fb['newfiles'] = fbase_stat_id(i,fb['lastscan'])
 
               fb['groupid'] = fa_group
               if access(fb['listacs']):              
                 filebases.append(fb)
 
-            else:
-              fb['groupid'] = -1;
-              filebases.insert(0,fb)         
+              #else:
+              #  fb['groupid'] = -1;
+              #  filebases.insert(0,fb)         
         
     #except:
     #    e = sys.exc_info()[0]
@@ -1264,13 +1285,13 @@ def get_virtualbases():
     #writeln(base['name'][-3:])
     #time.sleep(0.2)
 
-    if base['name'][-3:].upper() == '!VG':
+    if base['tag'][-3:].upper() == '!VG':
       #[opi] change group else access doesnt work
       #fa_group = getgroupfromacs(filebases[i]['listacs'])
       #if fa_group != -1:
       #  menucmd('FG',str(fa_group))
 
-      filebases[i]['name'] = filebases[i]['name'].replace('!VG','!VB')
+      #filebases[i]['name'] = filebases[i]['name'].replace('!VG','!VB')
       #get folders from path
       virtualbase = base
     
@@ -1283,7 +1304,8 @@ def get_virtualbases():
               virtualbase = copy(base)
 
               #virtualbase['virtual'] = True
-              virtualbase['name'] = folders[f] + ' !VG'
+              virtualbase['name'] = folders[f]
+              virtualbase['tag'] = '!VG'
               virtualbase['path'] = base['path'] + folders[f] + os.sep
 
               files, bytes, new = count_virtual( virtualbase['path'], virtualbase['lastscan'] )
@@ -1300,11 +1322,11 @@ def get_virtualbases():
 
 
 #------------------------------------------------------------------------------
-def loadmainlist(addgroup=True):
+def loadmainlist(addgroup=True, quick=False):
   global action
 
   get_filegroups()
-  get_filebases()
+  get_filebases(quick)
   if addgroup:
     get_virtualbases()
 
@@ -1329,7 +1351,7 @@ def loadmainlist(addgroup=True):
             res.append({'name':filegroups[i]['name'],'type':'group','acs':filegroups[i]['acs']})   #,'target':filegroups[i]['id']
             groupadded = True
 
-          res.append({'lsfilename':filebases[j]['lsfilename'],'path':filebases[j]['path'],'lastscan':filebases[j]['lastscan'],'total':filebases[j]['total'],'totalkb':filebases[j]['totalkb'],'totaldl':filebases[j]['totaldl'],'newfiles':filebases[j]['newfiles'],'id':filebases[j]['id'],'name':filebases[j]['name'],'type':'mbase','acs':filebases[j]['listacs'],'dlacs':filebases[j]['dlacs'],'target':str(filebases[j]['id']),'desc':'','groupid':filegroups[i]['id']})
+          res.append({'tag':filebases[j]['tag'],'lsfilename':filebases[j]['lsfilename'],'path':filebases[j]['path'],'lastscan':filebases[j]['lastscan'],'total':filebases[j]['total'],'totalkb':filebases[j]['totalkb'],'totaldl':filebases[j]['totaldl'],'newfiles':filebases[j]['newfiles'],'id':filebases[j]['id'],'name':filebases[j]['name'],'type':'mbase','acs':filebases[j]['listacs'],'dlacs':filebases[j]['dlacs'],'target':str(filebases[j]['id']),'desc':'','groupid':filegroups[i]['id']})
                
  
   #loop again for fileareas without groups
@@ -1340,7 +1362,7 @@ def loadmainlist(addgroup=True):
         #[opi] add base
         #res.append({'path':filebases[j]['path'],'lastscan':filebases[j]['lastscan'],'total':filebases[j]['total'],'totalkb':filebases[j]['totalkb'],'totaldl':filebases[j]['totaldl'],'newfiles':filebases[j]['newfiles'],'id':filebases[j]['id'],'name':filebases[j]['name'],'type':'mbase','acs':filebases[j]['listacs'],'target':str(filebases[j]['id']),'desc':'','groupid':filegroups[i]['id']})
         if ("newonly" in action and filebases[j]['newfiles'] > 0) or "newonly" not in action:
-          res.append({'path':filebases[j]['path'],'lastscan':filebases[j]['lastscan'],'total':filebases[j]['total'],'totalkb':filebases[j]['totalkb'],'totaldl':filebases[j]['totaldl'],'newfiles':filebases[j]['newfiles'],'id':filebases[j]['id'],'name':filebases[j]['name'],'type':'mbase','acs':filebases[j]['listacs'],'dlacs':filebases[j]['dlacs'],'desc':'','groupid':filegroups[i]['id']})
+          res.append({'tag':filebases[j]['tag'],'path':filebases[j]['path'],'lastscan':filebases[j]['lastscan'],'total':filebases[j]['total'],'totalkb':filebases[j]['totalkb'],'totaldl':filebases[j]['totaldl'],'newfiles':filebases[j]['newfiles'],'id':filebases[j]['id'],'name':filebases[j]['name'],'type':'mbase','acs':filebases[j]['listacs'],'dlacs':filebases[j]['dlacs'],'desc':'','groupid':filegroups[i]['id']})
         
         #found = True
   #if found == True:
@@ -1443,6 +1465,7 @@ def treelist(items,grouponly=False):
     #[opi] set selbar to current area 
     i = 0    
     fbase = getfbaseid(user["fbase"])
+    
     if fbase != 0:
       while i<len(items):
         if items[i]['type'] != 'group':
@@ -1489,7 +1512,7 @@ def treelist(items,grouponly=False):
         fa_group = items[selbar]['groupid']       
         menucmd('FG',str(fa_group))
         menucmd('FA',str(items[selbar]['id']))
-        setpinfo(7, items[selbar]['name'].replace('!VG','').replace('!VB','').strip() )        
+        setpinfo(7, items[selbar]['name']) #.replace('!VG','').replace('!VB','').strip() )        
 
         #should add oldpos/selbar to redraw
         if oldbar <> selbar or oldtop <> top or redraw == True:
@@ -1514,7 +1537,8 @@ def treelist(items,grouponly=False):
                   #name = items[y]['name']
 
                   #set prompt for use in display strings
-                  name = items[y]['name'].replace('!VB','').replace('!VG','')
+                  #name = items[y]['name'].replace('!VB','').replace('!VG','')
+                  name = items[y]['name'] #.replace('!VB','').replace('!VG','')
 
                   if items[y]['name'].find('!VG') > -1:         
                     if selbar == y:                             
@@ -2008,6 +2032,7 @@ def filelistmenu(fbase):
     global download_queue
     global sort_method
     global bar_oldpos
+    global prompt_208
 
     bar_oldpos = -1
 
@@ -2037,7 +2062,7 @@ def filelistmenu(fbase):
           #TODO: WHY THE HELL WAS THIS FBASE?!?!?!?! OMG
           # WHEN NO SCANDATE ON VIRTUAL BASE IT DOES NOT GET ADDED TO THE NEWFILES (works as intended?) because it could be a huge number of files.. mhmm
 
-          if base['name'][-3:] == "!VB":            
+          if base['tag'][-3:] == "!VB":            
             items += getvirtualfilesrecursive(base['groupid'], base['id'], base['path'],base['lastscan'])
           elif base['name'][-3:] == "!VG":
             items += getvirtualfiles(base['groupid'], base['id'], base['path'],base['lastscan'])
@@ -2046,7 +2071,7 @@ def filelistmenu(fbase):
          
     else:
 
-      if fbase['name'][-3:] == "!VB":
+      if fbase['tag'][-3:] == "!VB":
         items += getvirtualfilesrecursive(fbase['groupid'], fbase['id'], fbase['path'],fbase['lastscan'])
       elif fbase['name'][-3:] == "!VG":
         items += getvirtualfiles(fbase['groupid'], fbase['id'], fbase['path'],fbase['lastscan'])
@@ -2198,8 +2223,9 @@ def filelistmenu(fbase):
         if redraw == True:
         
           # should only be called after popup or prompt
-          drawfilelist()   
-          setpinfo(7, fbase['name'].replace('!VG','').replace('!VB','').strip() )        
+          drawfilelist()
+          # when returning from file viewer for example
+          setpinfo(7, fbase['name']) #.replace('!VG','').replace('!VB','').strip() )        
           write(fb_displaystr)
           redrawtimeout = True
 
@@ -2215,7 +2241,7 @@ def filelistmenu(fbase):
             #write(str(items[selbar]['baseid']))
             tmpbase = getfbaseid(int(items[selbar]['baseid']))
             #write(str(tmpbase))
-            setpinfo(7, tmpbase['name'].replace('!VG','').replace('!VB','').strip() )        
+            #setpinfo(7, tmpbase['name'].replace('!VG','').replace('!VB','').strip() )        
             write(fb_displaystr)
 
           #[opi]debug for strlen
@@ -2399,7 +2425,7 @@ def filelistmenu(fbase):
           #avoid error on no description
           if items[selbar]['desc']:
 
-            if ( items[selbar]['desc'][0] == 'No Description' or items[selbar]['name'] == items[selbar]['desc'][0]) and items[selbar]['name'][-4:] == '.txt':
+            if ( items[selbar]['desc'][0] == prompt_208 or items[selbar]['name'] == items[selbar]['desc'][0]) and (items[selbar]['name'][-4:] == '.txt' or items[selbar]['name'][-4:] == '.asc'):
               #var_dump(fileinfo)
               #write('|PN')
               #ff['desc'][0] = fbase['path']+fileinfo["filename"]
@@ -2433,33 +2459,91 @@ def filelistmenu(fbase):
               #write('|PN')
               #except ValueError:
               #items[selbar]['desc'][0] = fbase['path']+items[selbar]["name"]
+            if items[selbar]['desc'][0] == prompt_208:
+              loaded = False
+              try:
+                file_mod_name = 'filemod_' + items[selbar]['name'][-3:]
+                #msgdialog('et',file_mod_name.lower() )
+                file_mod = __import__( file_mod_name.lower() )
+              except ImportError as e:
+                #msgdialog('tes','no')
+                pass
+              except Exception as e:
+                #logging.error(traceback.format_exc())
+                #msgdialog('test',str(traceback.format_exc()))
+                error_message = str(e)
+                print("An error occurred:", error_message)
+                tb = traceback.format_exc()
+                print(tb)
+              else:
+                loaded = True
+                #msgdialog('tes','yes')
+              
+              #msgdialog('test','test2')
+              if loaded:
+                #msgdialog('test','test')
+                try:
+                  lines = file_mod.load_desc(items[selbar]['name'], fbase['path'])
+                  
+                  #msgdialog('test','test2')
+                except NameError:        
+                  logerror('vBase FileMod - could not find function load_desc() in python module')
+                  pass
+                except TypeError:
+                  logerror('vBase FileMod - function load_desc() takes two parameters')
+                  pass
+                except Exception as e:
+                  #logging.error(traceback.format_exc())
+                  error_message = str(e)
+                  print("An error occurred:", error_message)
+                  tb = traceback.format_exc()
+                  print(tb)
+                else: 
+                  #msgdialog('desc','test')       
+                  #text = file_mod.load_desc()
+                  
+                  #text = file_mod.load_desc(items[selbar]['name'], fbase['path'])
+                  #gotoxy(1,1)
+                  #write('|PN')
+                  #flushbuffer() 
+                  #print("An error occurred:", text)
+                  #tb = traceback.format_exc()
+                  #print(tb)
+                  #gotoxy(1,1)
+                  #write('halo')
 
-            elif items[selbar]['desc'][0] == 'No Description' and items[selbar]['name'][-4:] == '.flf':
-              if exists(tmpbase['path']+items[selbar]["name"]):
-                try: 
-                  #get width of character
-                  #str(figlet_format('test', font=txt)) 
-                  #f = Figlet(font=fbase['path']+items[selbar]['name'][0:-4],width=dizmaxwidth-10,justify="center") 
-                  f = Figlet(font=tmpbase['path']+items[selbar]['name'][0:-4],width=dizmaxwidth,justify="left") 
-                  #text = f.renderText(items[selbar]['name'][0:-4]).encode('ascii') #must encode to ascii to avoid unicode errors
-                  if items[selbar]["name"] == "tmplr":
-                    text = f.renderText('0123456789') #must encode to ascii to avoid unicode errors
-                  else:
-                    text = f.renderText(items[selbar]['name'][0:-4]) #must encode to ascii to avoid unicode errors
-          
-                  items[selbar]['desc'] = text.splitlines()
+                  items[selbar]['desc'] = lines
                   for item in items[selbar]['desc']:
                     if len(item) > items[selbar]['desclen']:
                       items[selbar]['desclen'] = len(item)
+        
 
-                except Exception:
-                  items[selbar]['desc'][0] = 'Could not load font'
-                  items[selbar]['desclen'] = len(items[selbar]['desc'][0])
-                
-                if len(items[selbar]['desc']) == 0:
-                  items[selbar]['desc'] = []
-                  items[selbar]['desc'].append('Could not load font')
-                  items[selbar]['desclen'] = len(items[selbar]['desc'][0])
+            #elif items[selbar]['desc'][0] == prompt_208 and items[selbar]['name'][-4:] == '.flf':
+            #  if exists(tmpbase['path']+items[selbar]["name"]):
+            #    try: 
+            #      #get width of character
+            #      #str(figlet_format('test', font=txt)) 
+            #      #f = Figlet(font=fbase['path']+items[selbar]['name'][0:-4],width=dizmaxwidth-10,justify="center") 
+            #      f = Figlet(font=tmpbase['path']+items[selbar]['name'][0:-4],width=dizmaxwidth,justify="left") 
+            #      #text = f.renderText(items[selbar]['name'][0:-4]).encode('ascii') #must encode to ascii to avoid unicode errors
+            #      if items[selbar]["name"] == "tmplr":
+            #        text = f.renderText('0123456789') #must encode to ascii to avoid unicode errors
+            #      else:
+            #        text = f.renderText(items[selbar]['name'][0:-4]) #must encode to ascii to avoid unicode errors
+            #
+            #      items[selbar]['desc'] = text.splitlines()
+            #      for item in items[selbar]['desc']:
+            #        if len(item) > items[selbar]['desclen']:
+            #          items[selbar]['desclen'] = len(item)
+            #
+            #    except Exception:
+            #      items[selbar]['desc'][0] = 'Could not load font'
+            #      items[selbar]['desclen'] = len(items[selbar]['desc'][0])
+            #    
+            #    if len(items[selbar]['desc']) == 0:
+            #      items[selbar]['desc'] = []
+            #      items[selbar]['desc'].append('Could not load font')
+            #      items[selbar]['desclen'] = len(items[selbar]['desc'][0])
 
             #find DIZ description if still not found
 
@@ -2504,13 +2588,13 @@ def filelistmenu(fbase):
                   items[selbar]['ansi'] = True
 
           if 'ansi' in items[selbar] and items[selbar]['ansi'] == False:
-            writeln(ascstart)
+            #writeln(ascstart)
             flush()
 
           diz(dizi)               
 
           if 'ansi' in items[selbar] and items[selbar]['ansi'] == False:
-            writeln(ascend)
+            #writeln(ascend)
             flush()
 
 
@@ -2539,7 +2623,6 @@ def filelistmenu(fbase):
           if extended:
 
             start = datetime.datetime.now()            
-            movement = True
             #timer = True
 
             if key == KEY_UP:
@@ -2596,9 +2679,12 @@ def filelistmenu(fbase):
 
             if key in MOVEMENT_KEY:
               #[opi] reset filescroller
-              dizi = 0
-              fnstrpos = 0
-              redrawfnstr = False
+              #if key != KEY_LEFT and key != KEY_LEFT:
+              if key != KEY_RIGHT and key != KEY_LEFT:
+                dizi = 0
+                fnstrpos = 0
+                redrawfnstr = False
+                movement = True
               # start time and end time
 
 
@@ -2634,11 +2720,22 @@ def filelistmenu(fbase):
                 done = True
 
             elif key == KEY_ENTER:
-
-              if fbase['name'].find('!VB') > 1 or fbase['name'].find('!VG') > -1:
-                  s = 'Can not view file in virtual base'
-                  msgdialog(' View ',s)
-                  redraw = True
+              #logerror('--test')
+              #logerror(str(fbase))
+              if fbase['tag'].find('!VB') > -1 or fbase['tag'].find('!VG') > -1:
+                  file = items[selbar]['realpath']+items[selbar]['name']
+                  #msgdialog('view',str(items[selbar]['name'][-4:]))
+                  if file[-4:] == '.txt' or file[-4:] == '.asc' or file[-4:] == '.ans':
+                    #showfile(file,0,True,True,False)
+                    #menucmd('GV','ansiview.ini;ansiview_help.ans;0;'+file+'')
+                    menucmd('GV','ansiview;'+file)
+                    redraw = True
+                  else:
+                    #menucmd('FV','archive_view;'+file)
+                    s = 'Can not view non text file in virtual base (yet)'
+                    msgdialog(' View ',s)
+                    redraw = True
+                    
               else: 
                   
                 redraw = True
@@ -2661,7 +2758,6 @@ def filelistmenu(fbase):
 
                   #if 'ansi' in items[selbar] and not items[selbar]['ansi']:
                   #  pwrite(ascstart)
-                  
                   menucmd('FV','')             
                   
                   #if 'ansi' in items[selbar] and not items[selbar]['ansi']:
@@ -2677,7 +2773,7 @@ def filelistmenu(fbase):
 
             elif key == KEY_SPACE:
 
-              if fbase['name'].find('!VB') > 1 or fbase['name'].find('!VG') > -1:
+              if fbase['tag'].find('!VB') > -1 or fbase['tag'].find('!VG') > -1:
                   s = 'Can not qeue files in virtual base, download directly instead'
                   msgdialog(' View ',s)
                   redraw = True
@@ -2749,7 +2845,7 @@ def filelistmenu(fbase):
 
             elif key == 'D':
 
-                if fbase['name'].find('!VB') > 0 or fbase['name'].find('!VG') > 0: 
+                if fbase['tag'].find('!VB') > -1 or fbase['tag'].find('!VG') > -1: 
                   write('|CL|SF03|DFdownloads||TF|CR|07Download|08:|15 '+items[selbar]['name']+'|CR|CR|CR')   
                   #redraw = True
                   
@@ -2942,6 +3038,84 @@ def filelistmenu(fbase):
 #------------------------------------------------------------------------------
 
 
+#------------------------------------------------------------------------------------------------------
+# replace prompts
+#------------------------------------------------------------------------------------------------------
+
+def replace_prompts():
+  
+  global prompt_47
+  global prompt_49
+  global prompt_50
+  global prompt_53
+  global prompt_54
+  global prompt_208
+  global prompt_357
+
+  #047 file already in queue
+  prompt_47 = getprompt(49)
+  setprompt(47, '|IF|00')
+
+  #049 file already in queue
+  prompt_49 = getprompt(49)
+  setprompt(49, '|IF|00')
+  #|15File is already in queue
+
+  #050 file added to batch
+  prompt_50 = getprompt(50)
+  setprompt(50, '|IF|00')
+
+  #053 select which file to remove from batch
+  prompt_53 = getprompt(53)
+  setprompt(53, '|IF|00') #blank next prompt and b/lack text
+  #|07Select file |15#|07 to remove |08(|151|08 - |15|&1|08) |08: |XX|IF|[K
+
+  prompt_208 = getprompt(208)
+
+  #054 batch removed from queue
+  prompt_54 = getprompt(54)
+  setprompt(54, '|IF|00')
+
+  #357 add file to batch
+  prompt_357 = getprompt(357)
+  setprompt(357, '|IF|00')
+  # |01] |09Add which file number to batch |01(|07Enter|01/|07Quit|01)|09: |XX
+
+  #download qeue
+  #085 download queued files?
+
+
+#------------------------------------------------------------------------------
+# restore prompts
+#------------------------------------------------------------------------------
+def restore_prompts():
+
+  global prompt_47
+  global prompt_49
+  global prompt_50
+  global prompt_53
+  global prompt_54
+  global prompt_357
+
+  #047 file already in queue
+  setprompt(47, prompt_47)
+
+  #049 file already in queue
+  setprompt(49, prompt_49)
+
+  #050 file added to batch
+  setprompt(50, str(prompt_50))
+
+  #053 select which file to remove from batch
+  setprompt(53, prompt_53) 
+
+  #054 batch removed from queue
+  #setprompt(54, str(prompt_54))
+
+  #357 add file to batch
+  setprompt(357, prompt_357)
+
+
 ################################################################################################################################
 # Main
 ################################################################################################################################
@@ -2952,7 +3126,6 @@ def filelistmenu(fbase):
 #config = ConfigParser.ConfigParser()
 #config.read(cfgname)
 user            = getuser(0)
-download_queue  = OD()
 cfg             = getcfg()
 
 sysop_level     = re.findall(r'\d+', cfg['sysopacs'])[0]
@@ -2960,41 +3133,6 @@ sysop_level     = re.findall(r'\d+', cfg['sysopacs'])[0]
 global action
 
 action = []
-
-#------------------------------------------------------------------------------------------------------
-# replace prompts
-#------------------------------------------------------------------------------------------------------
-
-#047 file already in queue
-prompt_47 = getprompt(49)
-setprompt(47, '|IF|00')
-
-#049 file already in queue
-prompt_49 = getprompt(49)
-setprompt(49, '|IF|00')
-#|15File is already in queue
-
-#050 file added to batch
-prompt_50 = getprompt(50)
-setprompt(50, '|IF|00')
-
-#053 select which file to remove from batch
-prompt_53 = getprompt(53)
-setprompt(53, '|IF|00') #blank next prompt and b/lack text
-#|07Select file |15#|07 to remove |08(|151|08 - |15|&1|08) |08: |XX|IF|[K
-
-#054 batch removed from queue
-prompt_54 = getprompt(54)
-setprompt(54, '|IF|00')
-
-#357 add file to batch
-prompt_357 = getprompt(357)
-setprompt(357, '|IF|00')
-# |01] |09Add which file number to batch |01(|07Enter|01/|07Quit|01)|09: |XX
-
-#download qeue
-#085 download queued files?
-
 
 
 #------------------------------------------------------------------------------------------------------
@@ -3004,7 +3142,7 @@ setprompt(357, '|IF|00')
 i = 1
 if param_count() == 0:
   action.append('file')
-  action.append('loadarea')
+  #action.append('loadarea')
 
 while i <= param_count():
     arg = param_str(i)  
@@ -3052,18 +3190,19 @@ while i <= param_count():
 
     i += 1
 
-if "loadarea" in action:
-  curfbase = getfbaseid(user["fbase"])
-  setpinfo(7, curfbase['name'].replace('!VG','').replace('!VB','').strip() )        
-  
+#
+#if "loadarea" in action:
+#  curfbase = getfbaseid(user["fbase"])
+#  setpinfo(7, curfbase['name'].replace('!VG','').replace('!VB','').strip() )        
+#  
 
 if "changearea" in action:
 
   args = param_str(2)
   if args == "-" or args == "+":
-    filebases = loadmainlist(False)
+    filebases = loadmainlist(False, True)
     #get_filebases(True)
- # 
+     
     curfbase = getfbaseid(user["fbase"])    
     for i in range(len(filebases)):
       #write(str(filebases[i]['id'])+'}')
@@ -3085,18 +3224,29 @@ if "changearea" in action:
           menucmd('FG',str(filebases[next]['groupid']))
         menucmd('FA',str(filebases[next]['id'])) 
 
-        setpinfo(7, filebases[next]['name'].replace('!VG','').replace('!VB','').strip() )        
+        #setpinfo(7, filebases[next]['name'].replace('!VG','').replace('!VB','').strip() )        
+        break
         #writeln('1')
 
+elif "queue" in action:
 
-if "queue" in action:
+  replace_prompts()
+
+  download_queue  = OD()
+
   #053 select which file to remove from batch
-  setprompt(53, prompt_53) 
+  #setprompt(53, prompt_53) 
 
   read_download_queue()
   editqueue()
 
-if "file" in action or "group" in action:
+  restore_prompts()
+
+elif "file" in action or "group" in action:
+
+  replace_prompts()
+  download_queue  = OD()
+
   read_download_queue()
   #clrscr()
     
@@ -3110,6 +3260,7 @@ if "file" in action or "group" in action:
     
   if "file" in action:
     fbase = getfbaseid(user["fbase"])
+
     fbase['groupid'] = 0
     fbase['lastscan'] = get_last_scan(cfg['data']+fbase['filename']+'.scn')
     #filelistmenu(fbase["name"],fbase["id"],getfilesbaseid(fbase["id"],fbase['lastscan']),fbase)
@@ -3122,27 +3273,6 @@ if "file" in action or "group" in action:
       grouponly = True
     treelist(loadmainlist(),grouponly)
 
-#------------------------------------------------------------------------------
-# restore prompts
-#------------------------------------------------------------------------------
-
-#047 file already in queue
-setprompt(47, prompt_47)
-
-#049 file already in queue
-setprompt(49, prompt_49)
-
-#050 file added to batch
-#setprompt(50, str(prompt_50))
-
-#053 select which file to remove from batch
-setprompt(53, prompt_53) 
-
-#054 batch removed from queue
-#setprompt(54, str(prompt_54))
-
-#357 add file to batch
-setprompt(357, prompt_357)
-
+    restore_prompts()
 
 ################################################################################################################################
