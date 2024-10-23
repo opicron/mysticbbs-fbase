@@ -1,8 +1,12 @@
 # -*- coding: UTF-8 -*- 
 
-# temp replace prompts!
 
 # changes opicron/thunderhawk
+#   - !VG or !VB in echotag name of filebase will create virtual groups or bases
+#   - added custom external file mods to display descriptions
+#     - first added TDF thedrawfont viewer
+#     - readded FLF figlet viewer
+#   - started work on replacing and restoring prompts
 #   - optimized updatebar position draw to accomodate redraw timer 
 #   - optimized filename position draw
 #   - add timer to redraw filearea description/fileinfo
@@ -893,6 +897,7 @@ def getfilesbaseid(groupid, baseid,lastscandate=-1):
       except Exception as e:
         pass
 
+    #ff['path'] = fbase['path'] #for newfilew?
     ff['queue'] = queued
     ff['name'] = fileinfo["filename"] #.encode('ascii') #dont encode, it messes up a lot
     ff['total'] = fileinfo["total"]
@@ -1501,7 +1506,8 @@ def treelist(items,grouponly=False):
     redraw = True
     searchstring = ''
 
-    menucmd('NA','Viewing Filebases')
+    menucmd('NA','vBASE - Viewing Filebases')
+    sysoplog(1,'vBASE - Viewing Filebases')
 
     while done == False and not shutdown():
 
@@ -1803,8 +1809,9 @@ def treelist(items,grouponly=False):
                 #    log('Entered: '+items[selbar]['name'])
                 #    vbaselistmenu(items[selbar]['name'],loadvbaselist(items[selbar]['target']),3,5,23,21,mbase_clsel,mbase_cl)                
 
-                menucmd('NA','Viewing Filebases')
-                
+                menucmd('NA','vBASE - Viewing Filebases')
+                #sysoplog(1,'vBASE - Viewing Filebases')
+
                 redraw = True
 
           elif key == 'Z':
@@ -1850,6 +1857,7 @@ def treelist(items,grouponly=False):
 
           elif key == 'D':
               if len(download_queue)>0:                  
+
                 stuffkey('Y')               
                 menucmd('FD','')
 
@@ -1859,6 +1867,7 @@ def treelist(items,grouponly=False):
 
                 #read_download_queue()
                 #log('Downloaded some files')
+
                 redraw = True
 
 
@@ -2063,26 +2072,27 @@ def filelistmenu(fbase):
           # WHEN NO SCANDATE ON VIRTUAL BASE IT DOES NOT GET ADDED TO THE NEWFILES (works as intended?) because it could be a huge number of files.. mhmm
 
           if base['tag'][-3:] == "!VB":            
-            items += getvirtualfilesrecursive(base['groupid'], base['id'], base['path'],base['lastscan'])
+            items += getvirtualfilesrecursive(base['groupid'], base['id'], base['path'], base['lastscan'])
           elif base['name'][-3:] == "!VG":
-            items += getvirtualfiles(base['groupid'], base['id'], base['path'],base['lastscan'])
+            items += getvirtualfiles(base['groupid'], base['id'], base['path'], base['lastscan'])
           else:
-            items += getfilesbaseid(base['groupid'], base['id'],base['lastscan'])
+            items += getfilesbaseid(base['groupid'], base['id'], base['lastscan'])
          
     else:
 
       if fbase['tag'][-3:] == "!VB":
-        items += getvirtualfilesrecursive(fbase['groupid'], fbase['id'], fbase['path'],fbase['lastscan'])
+        items += getvirtualfilesrecursive(fbase['groupid'], fbase['id'], fbase['path'], fbase['lastscan'])
       elif fbase['name'][-3:] == "!VG":
-        items += getvirtualfiles(fbase['groupid'], fbase['id'], fbase['path'],fbase['lastscan'])
+        items += getvirtualfiles(fbase['groupid'], fbase['id'], fbase['path'], fbase['lastscan'])
       else:
-        items += getfilesbaseid(fbase['groupid'], fbase['id'],fbase['lastscan'])
+        items += getfilesbaseid(fbase['groupid'], fbase['id'], fbase['lastscan'])
         
 
 
     global download_queue
 
-    menucmd('NA','Viewing Files')
+    menucmd('NA','vBASE - Viewing Files')
+    sysoplog(1,'vBASE - Viewing Files - ' + fbase['name'])
 
     #[opi] removed unused init
     #dizi = 0
@@ -2235,13 +2245,16 @@ def filelistmenu(fbase):
            
           if "newonly" in action and "fileonly" in action:
 
+            #during new upload scan set the filebase when browsing files
+            
             menucmd('FG',str(items[selbar]['groupid']))
             menucmd('FA',str(items[selbar]['baseid']))
 
             #write(str(items[selbar]['baseid']))
-            tmpbase = getfbaseid(int(items[selbar]['baseid']))
+            #tmpbase = getfbaseid(int(items[selbar]['baseid']))
+            fbase = getfbaseid(int(items[selbar]['baseid']))
             #write(str(tmpbase))
-            #setpinfo(7, tmpbase['name'].replace('!VG','').replace('!VB','').strip() )        
+            setpinfo(7, fbase['name'].replace('!VG','').replace('!VB','').strip() )        
             write(fb_displaystr)
 
           #[opi]debug for strlen
@@ -2420,7 +2433,7 @@ def filelistmenu(fbase):
           #if redraw == True:
           #cleararea(27,6,77,23,' ') #removed due to update drawing code
               #var_dump(ff['desc'])
-          tmpbase = getfbaseid(int(items[selbar]['baseid']))
+          #tmpbase = getfbaseid(int(items[selbar]['baseid']))
 
           #avoid error on no description
           if items[selbar]['desc']:
@@ -2434,8 +2447,8 @@ def filelistmenu(fbase):
                 #gotoxy(1,1)
                 #write('test')
                 f = open(items[selbar]['realpath']+items[selbar]["name"], 'r+')
-              elif exists(tmpbase['path']+items[selbar]["name"]):
-                f = open(tmpbase['path']+items[selbar]["name"], 'r+')
+              elif exists(fbase['path']+items[selbar]["name"]): #was tmpbase
+                f = open(fbase['path']+items[selbar]["name"], 'r+') #was tmpbase
               else:
                 continue
 
@@ -2475,6 +2488,7 @@ def filelistmenu(fbase):
                 print("An error occurred:", error_message)
                 tb = traceback.format_exc()
                 print(tb)
+                write('|PN')
               else:
                 loaded = True
                 #msgdialog('tes','yes')
@@ -2498,6 +2512,7 @@ def filelistmenu(fbase):
                   print("An error occurred:", error_message)
                   tb = traceback.format_exc()
                   print(tb)
+                  write('|PN')
                 else: 
                   #msgdialog('desc','test')       
                   #text = file_mod.load_desc()
@@ -2517,7 +2532,6 @@ def filelistmenu(fbase):
                     if len(item) > items[selbar]['desclen']:
                       items[selbar]['desclen'] = len(item)
         
-
             #elif items[selbar]['desc'][0] == prompt_208 and items[selbar]['name'][-4:] == '.flf':
             #  if exists(tmpbase['path']+items[selbar]["name"]):
             #    try: 
@@ -2844,11 +2858,11 @@ def filelistmenu(fbase):
                 redraw = True
 
             elif key == 'D':
-
+                
                 if fbase['tag'].find('!VB') > -1 or fbase['tag'].find('!VG') > -1: 
                   write('|CL|SF03|DFdownloads||TF|CR|07Download|08:|15 '+items[selbar]['name']+'|CR|CR|CR')   
                   #redraw = True
-                  
+
                   menucmd('F3', items[selbar]['filename']) #filename with path
                   time.sleep(0.2)
                   redraw = True
@@ -2892,8 +2906,7 @@ def filelistmenu(fbase):
                       
                     #else:
                       # no files downloaded
-                    
-                    
+
                     redraw = True
 
                   else:
