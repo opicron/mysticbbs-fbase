@@ -290,6 +290,31 @@ logdir = getcfg()['logs']
 
 
 
+#------------------------------------------------------------------------------
+def min_mystic_version(minor,alpha):
+    """ 
+    Check if minimal version requirement is met. When minor is larger than given
+    argument return true, else when minor is equal alpha is equal or higher the 
+    result is true. Minor less than argument is False.
+    """
+    version = mci2str('VR')
+
+    for match in re.findall(r'\.([0-9]{2})', version):
+        mystic_minor = int(match)
+        #bbs.writeln(str(mystic_minor))
+        if mystic_minor > int(minor):
+            return True
+        elif mystic_minor == int(minor):
+            for match in re.findall(r'A([0-9]{2})', version):
+                mystic_alpha = int(match)
+                #bbs.writeln(str(mystic_alpha))
+                if mystic_alpha >= int(alpha):
+                    return True
+
+    return False
+#------------------------------------------------------------------------------
+
+
 ##########################################################################################################################
 # Regex 
 ##########################################################################################################################
@@ -695,9 +720,15 @@ def get_last_scan(filename):
   global user
   global ls_offset
 
-  #filename = 'mystic-scripts.scn'
-  fmtls = "<LBL"
-  fmtls_s = struct.calcsize(fmtls)
+  #logerror(filename)
+
+  if min_mystic_version(12,47):
+    fmtls = "<LBL"
+    fmtls_s = struct.calcsize(fmtls)
+
+  if min_mystic_version(12,49):
+    fmtls = "<LBQQ"
+    fmtls_s = struct.calcsize(fmtls)
 
   #there must be a better way?
   if os.path.isfile(filename) == False:
@@ -721,6 +752,7 @@ def get_last_scan(filename):
         id      = ls[0]
         newscan = ls[1]
 
+
         #sec     = ((ls[2]>>0) & 0x1f)*2; # 0..60, only even values
         #min     = (ls[2]>>5) & 0x3f; # 0..59
         #hour    = (ls[2]>>11) & 0x1f; #0..23
@@ -734,8 +766,14 @@ def get_last_scan(filename):
 
         if id == user['id']:
           ls_offset[filename] = offset
-          return ls[2]
 
+          if min_mystic_version(12,49):
+            return dateu2d(ls[2])
+
+          if min_mystic_version(12,47):
+            return ls[2]
+
+  logerror('returned -1')
   return -1
 #------------------------------------------------------------------------------
 
@@ -746,7 +784,7 @@ def set_last_scan(filename, year, month, day):
   global user
 
   #filename = 'mystic-scripts.scn'
-  fmtls = "<LBL"
+  fmtls = "<LBI"
   fmtls_s = struct.calcsize(fmtls)
 
   #there must be a better way?
@@ -809,8 +847,14 @@ def fbase_stat_id(i,lastscandate=-1):
 
     #newfile increment
     if lastscandate != -1:
-      if fileinfo['date'] > lastscandate:
-        newfiles += 1
+
+      if min_mystic_version(12,49):        
+        if dateu2d(fileinfo['date']) > lastscandate:
+          newfiles += 1
+      elif min_mystic_version(12,47):        
+        if fileinfo['date'] > lastscandate:
+          newfiles += 1
+
     else:
       newfiles += 1
 
@@ -859,10 +903,15 @@ def getfilesbaseid(groupid, baseid,lastscandate=-1):
     #newfile
     ff['newfile'] = False
     if lastscandate != -1:
-      if fileinfo['date'] > lastscandate:
-        ff['newfile'] = True
-    else: 
-        ff['newfile'] = True
+
+      if min_mystic_version(12,49):        
+        if dateu2d(fileinfo['date']) > lastscandate:
+          ff['newfile'] = True
+      elif min_mystic_version(12,47):        
+        if fileinfo['date'] > lastscandate:
+          ff['newfile'] = True
+      else: 
+        ff['newfile'] = False
 
     ff['desc'] = fl_getdesc(flist)
 
@@ -1585,14 +1634,16 @@ def treelist(items,grouponly=False):
                       month   = (items[y]['lastscan']>>21) & 0xf; # 1..12
                       year    = ((items[y]['lastscan']>>25) & 0x7f) + 1980; # 1980..2108 print (year)
         
-                      if month > 0 and month < 13:
-                        last_scan_str = str(day)+' '+months[month]+' '+str(year) 
+                      
+                      last_scan_str = str(day)+' '+months[month]+' '+str(year) 
+                      #if month > 0 and month < 13:
+                      #logerror(str(items[y]['lastscan'])+last_scan_str)
 
                       #if items[y]['name'].find('!VB') > -1 or items[y]['name'].find('!VG') > -1:
                       #  last_scan_str += '|08 virtual'
 
-                      for i in range(22 - len( last_scan_str )):
-                        last_scan_str += ' '
+                      #for i in range(22 - len( last_scan_str )):
+                      #  last_scan_str += ' '
 
                     setpinfo(6, last_scan_str.strip())
 
@@ -2411,7 +2462,10 @@ def filelistmenu(fbase):
           #writexy(32,2,11,str(formatsize(items[selbar]['size'])).ljust(6,' '))          
 
           #[opi] changed date time to date only no more justification
-          tmpstr = datestr(dated2u(items[selbar]["date"]), "NNN DD YYYY")
+          #IF MYSTIC < 1.12 A48
+          #tmpstr = datestr(dated2u(items[selbar]["date"]), "NNN DD YYYY")
+          #ELSE
+          tmpstr = datestr(items[selbar]["date"], "NNN DD YYYY")
           
           #writexy(48,2,11,datestr(dated2u(items[selbar]["date"]), "NNN DD YYYY HH:II:SS").ljust(30,' '))
           #writexy(48,2,11,datestr(dated2u(items[selbar]["date"]), "NNN DD YYYY").ljust(11,' '))
