@@ -8,7 +8,8 @@ Advanced filebrowser for Mystic BBS
 - Mystic BBS queue system compatible
 - Lastseen / Last file scan compatible
 - Optimized drawing for slow connections
-- Add custom filemods by adding filemod_EXY.py files
+- Add custom filemods by adding filemod_EXT.py files
+- Filemod for Figlet Fonts included
 - Selected long file name scroll during inactivity
 - Virtual file groups and bases (add !VG or !VA to echonet setting)
 - Virtual file groups and bases index recursively
