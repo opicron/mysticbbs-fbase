@@ -14,6 +14,7 @@ Advanced filebrowser for Mystic BBS
 - Virtual file groups and bases (add !VG or !VA to echonet setting)
 - Virtual file groups and bases index recursively
 - Overrides Mystic prompts for a consistent mod experience
+- Loads dynamic @FILE_ID.DIZ from ASC and TXT files
 
 ![vbase-sorting](https://github.com/user-attachments/assets/b0db4eff-15b4-42fe-85a5-c4d8cd290a04)
 
